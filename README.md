@@ -38,36 +38,35 @@ It provisions a **VPC**, **public/private subnets**, **EC2 web servers**, and an
 | **Key Pair** | `canada-lab6-key` |
 | **User Data Script** | Installs and starts Apache web server with a custom HTML page |
 
-
+```bash
 #!/bin/bash
 yum update -y
 yum install -y httpd
 systemctl enable httpd
 systemctl start httpd
 echo "<html><h1>Welcome to HTTP Server</h1></html>" > /var/www/html/index.html
-Each instance serves a different page (“Server 1” / “Server 2”) for load-balancing verification.
+Each instance serves a different page (Server 1 / Server 2) for load-balancing verification.
 
 ☁️ CloudFormation Stack Details
 🧩 Parameters
-KeyName → EC2 key pair name
+Parameter	Description
+KeyName	EC2 key pair name
+InstanceAMI	Amazon Linux 2023 AMI ID
+SecurityGroupDescription	Description for EC2 Security Group
 
-InstanceAMI → Amazon Linux 2023 AMI ID
+🏗️ Resources Created
+🧱 VPC, Subnets, Route Tables, and Internet Gateway
 
-SecurityGroupDescription → Description for EC2 Security Group
+🔐 Security Groups (for EC2 + ALB)
 
-🏗️ Resources
-VPC, Subnets, Route Tables, and Internet Gateway
+💻 Two EC2 Instances (Apache web servers)
 
-Security Groups (for EC2 + ALB)
-
-Two EC2 Instances (Apache web servers)
-
-Application Load Balancer, Listener, and Target Group
+⚖️ Application Load Balancer, Listener, and Target Group
 
 📤 Outputs
-LoadBalancerDNSName → URL to access the web app
-
-VPCId → ID of the created VPC
+Output	Description
+LoadBalancerDNSName	URL to access the web app
+VPCId	ID of the created VPC
 
 🚀 Deployment Steps
 Open AWS Console → CloudFormation → Create Stack → With new resources (standard)
@@ -78,35 +77,35 @@ Parameters
 
 KeyName: select canada-lab6-key
 
-Keep all defaults
+Leave all other values as default
 
 Click Next → Next → Create Stack
 
 Wait for status → ✅ CREATE_COMPLETE
 
-Go to Outputs → copy the LoadBalancerDNSName
+Go to Outputs → copy LoadBalancerDNSName
 
-Open in your browser → refresh to see both web servers responding 🎉
+Open in browser → see both web servers responding 🎉
 
 🔍 Verification
 🧪 Browser Test
-
+bash
+Copy code
 http://<LoadBalancerDNSName>
+Expected Output:
 
-Displays alternating responses:
+Welcome to HTTP Server 1 (ca-central-1a)
 
-“Welcome to HTTP Server 1 (ca-central-1a)”
-
-“Welcome to HTTP Server 2 (ca-central-1b)”
+Welcome to HTTP Server 2 (ca-central-1b)
 
 💻 CLI Test
-
+bash
+Copy code
 curl http://<LoadBalancerDNSName>
-
 🔐 SSH Access
-
+bash
+Copy code
 ssh -i canada-lab6-key.pem ec2-user@<EC2-Public-IP>
-
 Username: ec2-user
 
 💡 Future Enhancements
@@ -138,10 +137,12 @@ Saravanan Nadanasabesan
 🏁 Final Output
 After successful deployment, visiting the Load Balancer DNS Name displays:
 
+pgsql
+Copy code
 Welcome to HTTP Server 1 (ca-central-1a)
 or
 
 pgsql
 Copy code
 Welcome to HTTP Server 2 (ca-central-1b)
-
+✅ This confirms that both EC2 instances are healthy and traffic is being distributed by the ALB.
