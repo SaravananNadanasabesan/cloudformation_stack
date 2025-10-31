@@ -16,43 +16,29 @@ It provisions a **VPC**, **public/private subnets**, **EC2 web servers**, and an
 
 ---
 
-## 🧭 Architecture Diagram
+## 🌎 Region and Availability Zones
 
-```mermaid
-flowchart TB
-    A[🌐 Internet] --> B[ALB - Application Load Balancer]
-    B --> C1[EC2 Instance 1<br>Public Subnet (AZ1a)]
-    B --> C2[EC2 Instance 2<br>Public Subnet (AZ1b)]
-    subgraph VPC["VPC (10.0.0.0/16)"]
-        subgraph PublicSubnets["Public Subnets"]
-            C1
-            C2
-        end
-        subgraph PrivateSubnets["Private Subnets"]
-            D1[Private Subnet 1 (AZ1a)]
-            D2[Private Subnet 2 (AZ1b)]
-        end
-    end
-🧩 The ALB distributes HTTP traffic evenly between two EC2 instances in separate Availability Zones.
+| Resource | Availability Zone | CIDR Block |
+|-----------|------------------|-------------|
+| Public Subnet 1 | ca-central-1a | 10.0.1.0/24 |
+| Private Subnet 1 | ca-central-1a | 10.0.2.0/24 |
+| Public Subnet 2 | ca-central-1b | 10.0.3.0/24 |
+| Private Subnet 2 | ca-central-1b | 10.0.4.0/24 |
 
-🌎 Region and Availability Zones
-Resource	Availability Zone	CIDR Block
-Public Subnet 1	ca-central-1a	10.0.1.0/24
-Private Subnet 1	ca-central-1a	10.0.2.0/24
-Public Subnet 2	ca-central-1b	10.0.3.0/24
-Private Subnet 2	ca-central-1b	10.0.4.0/24
+> **Region:** `ca-central-1` 🇨🇦 *(Canada Central)*
 
-Region: ca-central-1 🇨🇦 (Canada Central)
+---
 
-⚙️ EC2 Configuration
-Property	Value
-AMI	ami-0f3c8a41d58224188 (Amazon Linux 2023 – x86_64)
-Instance Type	t2.micro (Free Tier eligible)
-Key Pair	canada-lab6-key
-User Data Script	Installs and starts Apache web server with a custom HTML page
+## ⚙️ EC2 Configuration
 
-bash
-Copy code
+| Property | Value |
+|-----------|--------|
+| **AMI** | `ami-0f3c8a41d58224188` *(Amazon Linux 2023 – x86_64)* |
+| **Instance Type** | `t2.micro` *(Free Tier eligible)* |
+| **Key Pair** | `canada-lab6-key` |
+| **User Data Script** | Installs and starts Apache web server with a custom HTML page |
+
+```bash
 #!/bin/bash
 yum update -y
 yum install -y httpd
@@ -160,4 +146,3 @@ or
 pgsql
 Copy code
 Welcome to HTTP Server 2 (ca-central-1b)
-This confirms that both EC2 instances are healthy and traffic is being distributed by the ALB ✅
