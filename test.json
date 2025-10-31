@@ -1,0 +1,262 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Lab 6 - VPC with 2 public + 2 private subnets, 2 EC2 in public, ALB in front (ca-central-1, AZ a/b)",
+  "Parameters": {
+    "SecurityGroupDescription": {
+      "Description": "Security Group Description for EC2 instances",
+      "Type": "String",
+      "Default": "Allow HTTP and SSH"
+    },
+    "KeyName": {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "canada-lab6-key"
+    },
+    "InstanceAMI": {
+      "Description": "AMI for the EC2 instances in ca-central-1 (Amazon Linux 2023, x86_64)",
+      "Type": "AWS::EC2::Image::Id",
+      "Default": "ami-0f3c8a41d58224188"
+    }
+  },
+  "Resources": {
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true,
+        "Tags": [{ "Key": "Name", "Value": "VPC1" }]
+      }
+    },
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [{ "Key": "Name", "Value": "VPC Internet Gateway" }]
+      }
+    },
+    "AttachGateway": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "InternetGatewayId": { "Ref": "InternetGateway" }
+      }
+    },
+    "PublicSubnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "CidrBlock": "10.0.1.0/24",
+        "AvailabilityZone": "ca-central-1a",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [{ "Key": "Name", "Value": "Public Subnet 1" }]
+      }
+    },
+    "PrivateSubnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "CidrBlock": "10.0.2.0/24",
+        "AvailabilityZone": "ca-central-1a",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [{ "Key": "Name", "Value": "Private Subnet 1" }]
+      }
+    },
+    "PublicSubnet2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "CidrBlock": "10.0.3.0/24",
+        "AvailabilityZone": "ca-central-1b",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [{ "Key": "Name", "Value": "Public Subnet 2" }]
+      }
+    },
+    "PrivateSubnet2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "CidrBlock": "10.0.4.0/24",
+        "AvailabilityZone": "ca-central-1b",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [{ "Key": "Name", "Value": "Private Subnet 2" }]
+      }
+    },
+    "PublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "Tags": [{ "Key": "Name", "Value": "Public Route Table" }]
+      }
+    },
+    "PublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "RouteTableId": { "Ref": "PublicRouteTable" },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": { "Ref": "InternetGateway" }
+      }
+    },
+    "PublicSubnetRouteTableAssociation1": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": { "Ref": "PublicSubnet1" },
+        "RouteTableId": { "Ref": "PublicRouteTable" }
+      }
+    },
+    "PublicSubnetRouteTableAssociation2": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": { "Ref": "PublicSubnet2" },
+        "RouteTableId": { "Ref": "PublicRouteTable" }
+      }
+    },
+    "PrivateRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": { "Ref": "VPC" },
+        "Tags": [{ "Key": "Name", "Value": "Private Route Table" }]
+      }
+    },
+    "PrivateSubnetRouteTableAssociation1": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": { "Ref": "PrivateSubnet1" },
+        "RouteTableId": { "Ref": "PrivateRouteTable" }
+      }
+    },
+    "PrivateSubnetRouteTableAssociation2": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": { "Ref": "PrivateSubnet2" },
+        "RouteTableId": { "Ref": "PrivateRouteTable" }
+      }
+    },
+    "ELBSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "ELB Security Group",
+        "VpcId": { "Ref": "VPC" },
+        "SecurityGroupIngress": [
+          { "IpProtocol": "tcp", "FromPort": 80, "ToPort": 80, "CidrIp": "0.0.0.0/0" }
+        ],
+        "Tags": [{ "Key": "Name", "Value": "ALB-SG" }]
+      }
+    },
+    "EC2SecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": { "Ref": "SecurityGroupDescription" },
+        "VpcId": { "Ref": "VPC" },
+        "SecurityGroupIngress": [
+          { "IpProtocol": "tcp", "FromPort": 80, "ToPort": 80, "CidrIp": "0.0.0.0/0" },
+          { "IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "CidrIp": "0.0.0.0/0" }
+        ],
+        "Tags": [{ "Key": "Name", "Value": "EC2-SG" }]
+      }
+    },
+    "EC2Instance1": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": { "Ref": "InstanceAMI" },
+        "InstanceType": "t2.micro",
+        "SecurityGroupIds": [{ "Ref": "EC2SecurityGroup" }],
+        "SubnetId": { "Ref": "PublicSubnet1" },
+        "KeyName": { "Ref": "KeyName" },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "\n",
+              [
+                "#!/bin/bash",
+                "yum update -y",
+                "yum install -y httpd",
+                "systemctl enable httpd",
+                "systemctl start httpd",
+                "echo '<html><h1>Welcome to HTTP Server 1</h1></html>' > /var/www/html/index.html"
+              ]
+            ]
+          }
+        },
+        "Tags": [{ "Key": "Name", "Value": "WebServer1" }]
+      }
+    },
+    "EC2Instance2": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": { "Ref": "InstanceAMI" },
+        "InstanceType": "t2.micro",
+        "SecurityGroupIds": [{ "Ref": "EC2SecurityGroup" }],
+        "SubnetId": { "Ref": "PublicSubnet2" },
+        "KeyName": { "Ref": "KeyName" },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "\n",
+              [
+                "#!/bin/bash",
+                "yum update -y",
+                "yum install -y httpd",
+                "systemctl enable httpd",
+                "systemctl start httpd",
+                "echo '<html><h1>Welcome to HTTP Server 2</h1></html>' > /var/www/html/index.html"
+              ]
+            ]
+          }
+        },
+        "Tags": [{ "Key": "Name", "Value": "WebServer2" }]
+      }
+    },
+    "ApplicationLoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Scheme": "internet-facing",
+        "SecurityGroups": [{ "Ref": "ELBSecurityGroup" }],
+        "Subnets": [
+          { "Ref": "PublicSubnet1" },
+          { "Ref": "PublicSubnet2" }
+        ],
+        "Tags": [{ "Key": "Name", "Value": "Lab6-ALB" }]
+      }
+    },
+    "EC2TargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "HealthCheckIntervalSeconds": 30,
+        "HealthCheckProtocol": "HTTP",
+        "HealthCheckTimeoutSeconds": 15,
+        "HealthyThresholdCount": 5,
+        "Matcher": { "HttpCode": "200" },
+        "Port": 80,
+        "Protocol": "HTTP",
+        "Targets": [
+          { "Id": { "Ref": "EC2Instance1" }, "Port": 80 },
+          { "Id": { "Ref": "EC2Instance2" }, "Port": 80 }
+        ],
+        "UnhealthyThresholdCount": 3,
+        "VpcId": { "Ref": "VPC" }
+      }
+    },
+    "ALBListener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [
+          { "Type": "forward", "TargetGroupArn": { "Ref": "EC2TargetGroup" } }
+        ],
+        "LoadBalancerArn": { "Ref": "ApplicationLoadBalancer" },
+        "Port": 80,
+        "Protocol": "HTTP"
+      }
+    }
+  },
+  "Outputs": {
+    "LoadBalancerDNSName": {
+      "Description": "DNS name of the application load balancer",
+      "Value": { "Fn::GetAtt": ["ApplicationLoadBalancer", "DNSName"] }
+    },
+    "VPCId": {
+      "Description": "VPC Id",
+      "Value": { "Ref": "VPC" }
+    }
+  }
+}
