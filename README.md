@@ -38,7 +38,7 @@ It provisions a **VPC**, **public/private subnets**, **EC2 web servers**, and an
 | **Key Pair** | `canada-lab6-key` |
 | **User Data Script** | Installs and starts Apache web server with a custom HTML page |
 
-```bash
+
 #!/bin/bash
 yum update -y
 yum install -y httpd
@@ -90,9 +90,9 @@ Open in your browser → refresh to see both web servers responding 🎉
 
 🔍 Verification
 🧪 Browser Test
-bash
-Copy code
+
 http://<LoadBalancerDNSName>
+
 Displays alternating responses:
 
 “Welcome to HTTP Server 1 (ca-central-1a)”
@@ -100,13 +100,13 @@ Displays alternating responses:
 “Welcome to HTTP Server 2 (ca-central-1b)”
 
 💻 CLI Test
-bash
-Copy code
+
 curl http://<LoadBalancerDNSName>
+
 🔐 SSH Access
-bash
-Copy code
+
 ssh -i canada-lab6-key.pem ec2-user@<EC2-Public-IP>
+
 Username: ec2-user
 
 💡 Future Enhancements
@@ -138,11 +138,10 @@ Saravanan Nadanasabesan
 🏁 Final Output
 After successful deployment, visiting the Load Balancer DNS Name displays:
 
-pgsql
-Copy code
 Welcome to HTTP Server 1 (ca-central-1a)
 or
 
 pgsql
 Copy code
 Welcome to HTTP Server 2 (ca-central-1b)
+
