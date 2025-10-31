@@ -1,4 +1,4 @@
-<h1 align="center">🌩️ AWS CloudFormation – VPC, EC2, and Application Load Balancer (Lab 6)</h1>
+<h1 align="center">🌩️ AWS CloudFormation – VPC, EC2, and Application Load Balancer</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/AWS-CloudFormation-orange?logo=amazon-aws&logoColor=white" alt="AWS CloudFormation">
@@ -146,3 +146,4 @@ pgsql
 Copy code
 Welcome to HTTP Server 2 (ca-central-1b)
 ✅ This confirms that both EC2 instances are healthy and traffic is being distributed by the ALB.
+
